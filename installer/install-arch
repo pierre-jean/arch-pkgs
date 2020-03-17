@@ -73,7 +73,7 @@ mount "${part_boot}" /mnt/boot
 
 ### Install and configure the basic system ###
 
-pacstrap /mnt base linux linux-firmware zsh xorg xorg-init bspwm sudo
+pacstrap /mnt base linux linux-firmware zsh xorg xorg-xinit bspwm sudo
 genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 echo "${hostname}" > /mnt/etc/hostname
 
