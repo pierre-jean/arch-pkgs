@@ -3,6 +3,14 @@
 # This script can be run by executing the following:
 #   curl -sL https://git.io/vAoV8 | bash
 
+script_setup(){
+	set -uo pipefail
+	trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
+	### Set up logging ###
+	exec 1> >(tee "stdout.log")
+	exec 2> >(tee "stderr.log")
+}
+
 update_repo() {
 	MIRRORLIST_URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=https&use_mirror_status=on"
 
@@ -15,6 +23,7 @@ update_repo() {
 }
 
 select_options(){
+	loadkeys uk
 	hostname=$(dialog --stdout --inputbox "Enter hostname" 0 0) || exit 1
 	clear
 	: ${hostname:?"hostname cannot be empty"}
@@ -108,31 +117,18 @@ install_bootloader_bios(){
 	arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 }
 
-set -uo pipefail
-trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
+install_packages(){
+	pacstrap /mnt base dhcpcd linux linux-firmware dhcpcd zsh neovim xorg xorg-xinit bspwm sudo grub
+}
 
-loadkeys uk
 
+
+script_setup
 update_repo
-
 select_options
-
-### Set up logging ###
-exec 1> >(tee "stdout.log")
-exec 2> >(tee "stderr.log")
-
 timedatectl set-ntp true
-
-### Setup the disk and partitions ###
-
 is_uefi && format_uefi || format_bios
-
-# Simple globbing was not enough as on one device I needed to match /dev/mmcblk0p1 
-# but not /dev/mmcblk0boot1 while being able to match /dev/sda1 on other devices.
-
-### Install and configure the basic system ###
-
-pacstrap /mnt base dhcpcd linux linux-firmware dhcpcd zsh neovim xorg xorg-xinit bspwm sudo grub
+install_packages
 
 genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 echo "${hostname}" > /mnt/etc/hostname
@@ -141,11 +137,12 @@ is_uefi && install_bootloader_uefi || install_bootloader_bios
 
 echo "LANG=en_GB.UTF-8" > /mnt/etc/locale.conf
 
+
 arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input "$user"
 arch-chroot /mnt chsh -s /usr/bin/zsh
 arch-chroot /mnt systemctl enable dhcpcd
 
-arch-chroot /mnt echo "$user ALL=(ALL:ALL) ALL" >> /etc/sudoers
+echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
 
 echo "$user:$password" | chpasswd --root /mnt
 echo "root:$password" | chpasswd --root /mnt
