@@ -133,6 +133,7 @@ is_uefi && format_uefi || format_bios
 ### Install and configure the basic system ###
 
 pacstrap /mnt base dhcpcd linux linux-firmware dhcpcd zsh neovim xorg xorg-xinit bspwm sudo grub
+
 genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 echo "${hostname}" > /mnt/etc/hostname
 
@@ -140,9 +141,11 @@ is_uefi && install_bootloader_uefi || install_bootloader_bios
 
 echo "LANG=en_GB.UTF-8" > /mnt/etc/locale.conf
 
-arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input "$user"
+arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input,sudo "$user"
 arch-chroot /mnt chsh -s /usr/bin/zsh
 arch-chroot /mnt systemctl enable dhcpcd
+
+arch-chroot /mnt echo "$user ALL=(ALL:ALL) ALL" >> /etc/sudoers
 
 echo "$user:$password" | chpasswd --root /mnt
 echo "root:$password" | chpasswd --root /mnt
