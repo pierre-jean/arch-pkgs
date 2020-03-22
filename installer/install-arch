@@ -131,17 +131,20 @@ is_uefi && format_uefi || format_bios
 install_packages
 
 genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
-echo "${hostname}" > /mnt/etc/hostname
 
 is_uefi && install_bootloader_uefi || install_bootloader_bios
 
 echo "LANG=en_GB.UTF-8" > /mnt/etc/locale.conf
-
+echo "KEYMAP=uk" > /mnt/etc/vconsole.conf
 
 arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input "$user"
 arch-chroot /mnt chsh -s /usr/bin/zsh
+arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
 arch-chroot /mnt systemctl enable dhcpcd
 
+echo "exec bspwm" > /mnt/home/$user/.xinitrc
+
+echo "${hostname}" > /mnt/etc/hostname
 echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
 
 echo "$user:$password" | chpasswd --root /mnt
