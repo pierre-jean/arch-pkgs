@@ -20,6 +20,21 @@ update_repo() {
 	curl -s "$MIRRORLIST_URL" | \
 	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
 	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
+	cat >>/etc/pacman.conf <<EOF
+	[baraud]
+	SigLevel = Optional TrustAll
+	Server = https://arch-mirror.baraud.fr
+EOF
+}
+
+update_remote_repo() {
+	cat >>/mnt/etc/pacman.conf <<EOF
+	[baraud]
+	SigLevel = Optional TrustAll
+	Server = https://arch-mirror.baraud.fr
+EOF
+
+	arch-chroot /mnt/ pacman -Sy 
 }
 
 select_options(){
@@ -98,6 +113,14 @@ format_bios(){
 	mount "${part_root}" /mnt
 }
 
+generate_locales(){
+	echo "en_GB.UTF8 UTF8" >> /mnt/etc/locale.gen
+	echo "KEYMAP=uk" >> /mnt/etc/vconsole.conf
+	arch-chroot /mnt locale-gen
+
+
+}
+
 install_bootloader_uefi(){
 	arch-chroot /mnt bootctl install
 	cat <<EOF > /mnt/boot/loader/loader.conf
@@ -118,7 +141,7 @@ install_bootloader_bios(){
 }
 
 install_packages(){
-	pacstrap /mnt base dhcpcd linux linux-firmware dhcpcd zsh neovim xorg xorg-xinit bspwm sudo grub
+	pacstrap /mnt baraud-base linux linux-firmware
 }
 
 
@@ -134,8 +157,7 @@ genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 
 is_uefi && install_bootloader_uefi || install_bootloader_bios
 
-echo "LANG=en_GB.UTF-8" > /mnt/etc/locale.conf
-echo "KEYMAP=uk" > /mnt/etc/vconsole.conf
+generate_locales
 
 arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input "$user"
 arch-chroot /mnt chsh -s /usr/bin/zsh
