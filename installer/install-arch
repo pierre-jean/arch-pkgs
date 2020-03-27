@@ -27,7 +27,7 @@ update_repo() {
 EOF
 }
 
-update_remote_repo() {
+update_repo_final_machine() {
 	cat >>/mnt/etc/pacman.conf <<EOF
 	[baraud]
 	SigLevel = Optional TrustAll
@@ -152,6 +152,7 @@ select_options
 timedatectl set-ntp true
 is_uefi && format_uefi || format_bios
 install_packages
+update_repo_final_machine
 
 genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 
