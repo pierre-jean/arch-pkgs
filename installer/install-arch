@@ -15,7 +15,7 @@ update_repo() {
 	MIRRORLIST_URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=https&use_mirror_status=on"
 
 	pacman -Sy --noconfirm pacman-contrib
-
+	
 	echo "Updating mirror list"
 	curl -s "$MIRRORLIST_URL" | \
 	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
@@ -25,6 +25,8 @@ update_repo() {
 	SigLevel = Optional TrustAll
 	Server = https://arch-mirror.baraud.fr
 EOF
+        
+        pacman -Sy
 }
 
 update_repo_final_machine() {
@@ -37,6 +39,15 @@ EOF
 	arch-chroot /mnt/ pacman -Sy 
 }
 
+ask_password(){
+	password=$(dialog --stdout --passwordbox "Enter admin password" 0 0) || exit 1
+	clear
+	: ${password:?"password cannot be empty"}
+	password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
+	clear
+
+}
+
 select_options(){
 	loadkeys uk
 	hostname=$(dialog --stdout --inputbox "Enter hostname" 0 0) || exit 1
@@ -47,16 +58,19 @@ select_options(){
 	clear
 	: ${user:?"user cannot be empty"}
 
-	password=$(dialog --stdout --passwordbox "Enter admin password" 0 0) || exit 1
-	clear
-	: ${password:?"password cannot be empty"}
-	password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
-	clear
-	[[ "$password" == "$password2" ]] || ( echo "Passwords did not match"; exit 1; )
+	ask_password
+
+	[[ "$password1" == "$password2"]] || ask_password
 
 	devicelist=$(lsblk -dplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
 	device=$(dialog --stdout --menu "Select installtion disk" 0 0 0 ${devicelist}) || exit 1
 	clear
+
+	packages_availables="\
+		baraud-base command-line on\
+		baraud-desktop graphical-env off"
+
+	packages_to_install=$(dialog --stdout --checklist "Select packages to install" 0 0 0 "$(<$packages_availables)")
 }
 
 is_uefi() {
@@ -117,8 +131,6 @@ generate_locales(){
 	echo "en_GB.UTF-8 UTF-8" >> /mnt/etc/locale.gen
 	echo "KEYMAP=uk" >> /mnt/etc/vconsole.conf
 	arch-chroot /mnt locale-gen
-
-
 }
 
 install_bootloader_uefi(){
@@ -141,7 +153,7 @@ install_bootloader_bios(){
 }
 
 install_packages(){
-	pacstrap /mnt baraud-base linux linux-firmware
+	pacstrap /mnt linux linux-firmware $packages_to_install
 }
 
 
