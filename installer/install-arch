@@ -60,7 +60,7 @@ select_options(){
 
 	ask_password
 
-	[[ "$password1" == "$password2" ]] || ask_password
+	[[ "$password" == "$password2" ]] || ask_password
 
 	devicelist=$(lsblk -dplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
 	device=$(dialog --stdout --menu "Select installtion disk" 0 0 0 ${devicelist}) || exit 1
