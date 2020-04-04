@@ -1,0 +1,72 @@
+pkgname=baraud-desktop
+pkgver=0.0.3
+pkgrel=1
+pkgdesc="Base system configuration for baraud systems"
+arch=('any')
+url="https://github.com/pierre-jean/arch-pkgs"
+license=('MIT')
+install=baraud-desktop.install
+depends=(
+	'xf86-video-vesa'
+	'xorg-bdftopcf'
+	'xorg-docs'
+	'xorg-font-util'
+	'xorg-fonts-100dpi'
+	'xorg-fonts-75dpi'
+	'xorg-fonts-encodings'
+	'xorg-iceauth'
+	'xorg-luit'
+	'xorg-mkfontscale'
+	'xorg-server'
+	'xorg-server-common'
+	'xorg-server-devel'
+	'xorg-server-xephyr'
+	'xorg-server-xnest'
+	'xorg-server-xvfb'
+	'xorg-server-xwayland'
+	'xorg-sessreg'
+	'xorg-setxkbmap'
+	'xorg-smproxy'
+	'xorg-x11perf'
+	'xorg-xauth'
+	'xorg-xbacklight'
+	'xorg-xcmsdb'
+	'xorg-xcursorgen'
+	'xorg-xdpyinfo'
+	'xorg-xdriinfo'
+	'xorg-xev'
+	'xorg-xgamma'
+	'xorg-xhost'
+	'xorg-xinput'
+	'xorg-xkbcomp'
+	'xorg-xkbevd'
+	'xorg-xkbutils'
+	'xorg-xkill'
+	'xorg-xlsatoms'
+	'xorg-xlsclients'
+	'xorg-xmodmap'
+	'xorg-xpr'
+	'xorg-xprop'
+	'xorg-xrandr'
+	'xorg-xrdb'
+	'xorg-xrefresh'
+	'xorg-xset'
+	'xorg-xsetroot'
+	'xorg-xvinfo'
+	'xorg-xwd'
+	'xorg-xwininfo'
+	'xorg-xwud'
+	'xorg-xinit'
+	'sxhkd'
+	'bspwm'
+	'xwallpaper'
+	'xfce4-terminal'
+	'dmenu'
+	'rxvt-unicode'
+	)
+
+rootdir=$PWD
+
+package() { 
+	cp -a "$rootdir/files/"* "$pkgdir"
+}

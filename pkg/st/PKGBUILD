@@ -1,0 +1,22 @@
+pkgname=st
+pkgver=0.8.2
+pkgrel=1
+pkgdesc="Base system configuration for baraud systems"
+arch=('any')
+url="https://github.com/pierre-jean/arch-pkgs"
+license=('MIT')
+srcdir=src
+pkgdir=pkg
+
+prepare(){
+	rm -rf $srcdir/* $srcdir/.git
+	git clone https://git.suckless.org/st $srcdir
+}
+
+build(){
+	sed -i "s:^PREFIX =.*:PREFIX = ../pkg/usr/local:" config.mk
+}
+
+package(){
+	make install
+}
