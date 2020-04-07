@@ -3,12 +3,117 @@
 # This script can be run by executing the following:
 #   curl -sL https://git.io/vAoV8 | bash
 
-script_setup(){
+
+################# GLOBAL BATCH SETTINGS #################
+
+manage_error_during_install(){
 	set -uo pipefail
 	trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 	### Set up logging ###
 	exec 1> >(tee "stdout.log")
 	exec 2> >(tee "stderr.log")
+}
+
+################# HARD DRIVE PARTITION #################
+
+get_partition_template(){
+	[[ -z $partition_type ]] && partition_type=$(dialog --stdout --menu "Select partition_type" 0 0 0 "ALL_IN_ONE_DRIVE" "/home and /root share same drive" "SEPARATED_HOME" "/home will be on a dedicated drive" )
+}
+
+is_uefi() {
+	ls /sys/firmware/efi/efivars &> /dev/null
+}
+
+get_drive_to_install(){
+	devicelist=$(lsblkrrrplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
+	device=$(dialog --stdout --menu "Select installtion disk" 0 0 0 ${devicelist}) || exit 1
+}
+
+format_all_in_one_drive_uefi(){
+	[[ -z device ]] && get_drive_to_install
+	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
+	swap_end=$(( $swap_size + 129 + 1 ))MiB
+
+	parted --script "${device}" -- mklabel gpt \
+	  mkpart ESP fat32 1Mib 129MiB \
+	  set 1 boot on \
+	  mkpart primary linux-swap 129MiB ${swap_end} \
+	  mkpart primary ext4 ${swap_end} 100%
+
+	part_boot="$(ls ${device}* | grep -E "^${device}p?1$")"
+	part_swap="$(ls ${device}* | grep -E "^${device}p?2$")"
+	part_root="$(ls ${device}* | grep -E "^${device}p?3$")"
+
+	wipefs "${part_boot}"
+	wipefs "${part_swap}"
+	wipefs "${part_root}"
+
+	mkfs.vfat -F32 "${part_boot}"
+	mkswap "${part_swap}"
+	mkfs.f2fs -f "${part_root}"
+
+	swapon "${part_swap}"
+	mount "${part_root}" /mnt
+	mkdir /mnt/boot
+	mount "${part_boot}" /mnt/boot
+}
+
+format_all_in_one_drive_bios(){
+	[[ -z device ]] && get_drive_to_install
+	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
+	swap_end=$(( $swap_size + 1 ))MiB
+
+	parted --script "${device}" -- mklabel msdos \
+	  mkpart primary linux-swap 1MiB ${swap_end} \
+	  mkpart primary ext4 ${swap_end} 100% \
+	  set 2 boot on
+
+	part_swap="$(ls ${device}* | grep -E "^${device}p?1$")"
+	part_root="$(ls ${device}* | grep -E "^${device}p?2$")"
+
+	wipefs "${part_swap}"
+	wipefs "${part_root}"
+
+	mkswap "${part_swap}"
+	mkfs.ext4 "${part_root}"
+
+	swapon "${part_swap}"
+	mount "${part_root}" /mnt
+}
+
+format_with_sepatate_home_uefi(){
+	echo "Format with separate home is not supported yet"
+	exit 1
+}
+
+format_with_sepatate_home_bios(){
+	echo "Format with separate home is not supported yet"
+	exit 1
+}
+
+partition_hard_drive(){
+	get_partition_template
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && { is_uefi && format_all_in_on_drive_uefi || format_all_in_on_drive_bios }
+	[[ "$partition_type" == "SEPARATED_HOME" ]] && { is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios }
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] || { echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1  }
+}
+
+################# INSTALL LINUX #################
+
+get_locale(){
+	locale_list=ls /usr/share/kbd/keymaps/**/*.maps.gz | sed 's:\(.*\)/\(.*\)\.map\.gz:\2 (\1)' 
+	locale=$(dialog --stdout --menu "Select keyboard layout" 0 0 0  )
+}
+
+get_keyboard_layout(){
+}
+
+generate_locales(){
+	[[ -z $locale ]] { echo "locale variable must be set" && exit 1 }
+	[[ -z $keyboard_layout ]] { echo "keyboard_layout must be set" && exit 1 }
+	echo "en_GB.UTF-8 UTF-8" >> /mnt/etc/locale.gen
+	echo "KEYMAP=uk" >> /mnt/etc/vconsole.conf
+	arch-chroot /mnt locale-gen
 }
 
 update_repo() {
@@ -67,59 +172,7 @@ select_options(){
 	clear
 }
 
-is_uefi() {
-	ls /sys/firmware/efi/efivars &> /dev/null
-}
 
-format_uefi(){
-	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
-	swap_end=$(( $swap_size + 129 + 1 ))MiB
-
-	parted --script "${device}" -- mklabel gpt \
-	  mkpart ESP fat32 1Mib 129MiB \
-	  set 1 boot on \
-	  mkpart primary linux-swap 129MiB ${swap_end} \
-	  mkpart primary ext4 ${swap_end} 100%
-
-	part_boot="$(ls ${device}* | grep -E "^${device}p?1$")"
-	part_swap="$(ls ${device}* | grep -E "^${device}p?2$")"
-	part_root="$(ls ${device}* | grep -E "^${device}p?3$")"
-
-	wipefs "${part_boot}"
-	wipefs "${part_swap}"
-	wipefs "${part_root}"
-
-	mkfs.vfat -F32 "${part_boot}"
-	mkswap "${part_swap}"
-	mkfs.f2fs -f "${part_root}"
-
-	swapon "${part_swap}"
-	mount "${part_root}" /mnt
-	mkdir /mnt/boot
-	mount "${part_boot}" /mnt/boot
-}
-
-format_bios(){
-	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
-	swap_end=$(( $swap_size + 1 ))MiB
-
-	parted --script "${device}" -- mklabel msdos \
-	  mkpart primary linux-swap 1MiB ${swap_end} \
-	  mkpart primary ext4 ${swap_end} 100% \
-	  set 2 boot on
-
-	part_swap="$(ls ${device}* | grep -E "^${device}p?1$")"
-	part_root="$(ls ${device}* | grep -E "^${device}p?2$")"
-
-	wipefs "${part_swap}"
-	wipefs "${part_root}"
-
-	mkswap "${part_swap}"
-	mkfs.ext4 "${part_root}"
-
-	swapon "${part_swap}"
-	mount "${part_root}" /mnt
-}
 
 generate_locales(){
 	echo "en_GB.UTF-8 UTF-8" >> /mnt/etc/locale.gen
@@ -152,7 +205,7 @@ install_packages(){
 
 
 
-script_setup
+manage_error_during_install
 update_repo
 select_options
 timedatectl set-ntp true
