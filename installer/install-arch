@@ -18,7 +18,7 @@ private_mirror="./baraud_mirror"
 package_list="baraud-base baraud-desktop"
 
 manage_error_during_install(){
-	set -uo pipefail
+	set -o pipefail
 	trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 	### Set up logging ###
 	exec 1> >(tee "stdout.log")
@@ -28,7 +28,7 @@ manage_error_during_install(){
 ################# HARD DRIVE PARTITION #################
 
 get_partition_template(){
-	[[ -z $partition_type ]] && partition_type=$(dialog --stdout --menu "Select partition_type" 0 0 0 "ALL_IN_ONE_DRIVE" "/home and /root share same drive" "SEPARATED_HOME" "/home will be on a dedicated drive" )
+	[[ -z "$partition_type" ]] && partition_type=$(dialog --stdout --menu "Select partition_type" 0 0 0 "ALL_IN_ONE_DRIVE" "/home and /root share same drive" "SEPARATED_HOME" "/home will be on a dedicated drive" )
 }
 
 is_uefi() {
@@ -41,7 +41,7 @@ get_drive_to_install(){
 }
 
 format_all_in_one_drive_uefi(){
-	[[ -z device ]] && get_drive_to_install
+	[[ -z "$device" ]] && get_drive_to_install
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 129 + 1 ))MiB
 
@@ -70,7 +70,7 @@ format_all_in_one_drive_uefi(){
 }
 
 format_all_in_one_drive_bios(){
-	[[ -z $device ]] && get_drive_to_install
+	[[ -z "$device" ]] && get_drive_to_install
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 1 ))MiB
 
@@ -104,8 +104,8 @@ format_with_separate_home_bios(){
 
 partition_hard_drive(){
 	get_partition_template
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios 
-	[[ "$partition_type" == "SEPARATED_HOME" ]] && is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios 
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && ( is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios )
+	[[ "$partition_type" == "SEPARATED_HOME" ]] && ( is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios )
 	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] ||  echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1  
 }
 
@@ -120,7 +120,7 @@ get_hostname(){
 }
 
 set_hostname(){
-	[[ -z $hostname ]] && get_hostname
+	[[ -z "$hostname" ]] && get_hostname
 	echo "${hostname}" > /mnt/etc/hostname
 }
 
@@ -142,9 +142,9 @@ get_timezone(){
 }
 
 generate_locales(){
-	[[ -z $locale ]] && get_locale
-	[[ -z $keyboard_layout ]] && get_keyboard_layout
-	[[ -z $timezone ]] && get_timezone
+	[[ -z "$locale" ]] && get_locale
+	[[ -z "$keyboard_layout" ]] && get_keyboard_layout
+	[[ -z "$timezone" ]] && get_timezone
 	echo $locale >> /mnt/etc/locale.gen
 	echo $keyboard_layout >> /mnt/etc/vconsole.conf
 	arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$timezone" /etc/localtime
@@ -179,7 +179,7 @@ update_repo() {
 
 install_packages(){
 	update_repo
-	[[ -z $package_list ]] && package_list="base linux linux-firmware"
+	[[ -z "$package_list" ]] && package_list="base linux linux-firmware"
 	pacstrap /mnt $package_list
 }
 
@@ -204,9 +204,9 @@ get_password(){
 }
 
 add_user(){
-	[[ -z $user ]] && get_username
-	[[ -z $password ]] && get_password
-	[[ -z $shell ]] && /bin/sh
+	[[ -z "$user" ]] && get_username
+	[[ -z "$password" ]] && get_password
+	[[ -z "$shell" ]] && /bin/sh
 	arch-chroot /mnt useradd -mU -s "$shell" -G wheel,uucp,video,audio,storage,games,input "$user"
 	arch-chroot /mnt chsh -s $shell
 	echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
