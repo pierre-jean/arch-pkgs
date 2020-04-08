@@ -200,7 +200,7 @@ get_password(){
 		password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
 		clear
 		message="Password did not matched"
-	end
+	done
 }
 
 add_user(){
@@ -218,6 +218,7 @@ add_user(){
 # -------------- CONFIG ----------------#
 
 add_config(){
+	return 0
 }
 
 # --------------- BOOTLOADER ------------#
