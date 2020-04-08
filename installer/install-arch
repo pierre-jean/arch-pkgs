@@ -106,7 +106,7 @@ partition_hard_drive(){
 	get_partition_template
 	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && ( is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios )
 	[[ "$partition_type" == "SEPARATED_HOME" ]] && ( is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios )
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] ||  echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1  
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] ||  ( echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1 )
 }
 
 ################# INSTALL LINUX #################
