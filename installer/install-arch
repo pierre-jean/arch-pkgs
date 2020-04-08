@@ -111,6 +111,36 @@ partition_hard_drive(){
 
 ################# INSTALL LINUX #################
 
+
+# -------------- PACKAGES ----------------#
+
+update_mirror_list(){
+	pacman -Sy --no-confirm pacman-contrib
+	curl -s "$mirror_list_url" | \
+	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
+	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
+	pacman -Sy
+	cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+}
+
+update_private_mirror(){
+	cat /etc/pacman.conf $private_mirror > /etc/pacman.conf
+	cat /mnt/pacman.conf $private_mirror > /mnt/etc/pacman.conf
+	pacman -Sy
+}
+
+update_repo() {
+	[[ -n $mirror_list_url ]] && update_mirror_list
+	[[ -n $private_mirror ]] && update_private_mirror
+        pacman -Sy
+}
+
+install_packages(){
+	update_repo
+	[[ -z "$package_list" ]] && package_list="base linux linux-firmware"
+	pacstrap /mnt $package_list
+}
+
 # -------------- NETWORK ----------------#
 
 get_hostname(){
@@ -153,35 +183,6 @@ generate_locales(){
 	loadkeys $keyboard_layout
 }
 
-
-# -------------- PACKAGES ----------------#
-
-update_mirror_list(){
-	pacman -Sy --no-confirm pacman-contrib
-	curl -s "$mirror_list_url" | \
-	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
-	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
-	pacman -Sy
-	cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
-}
-
-update_private_mirror(){
-	cat /etc/pacman.conf $private_mirror > /etc/pacman.conf
-	cat /mnt/pacman.conf $private_mirror > /mnt/etc/pacman.conf
-	pacman -Sy
-}
-
-update_repo() {
-	[[ -n $mirror_list_url ]] && update_mirror_list
-	[[ -n $private_mirror ]] && update_private_mirror
-        pacman -Sy
-}
-
-install_packages(){
-	update_repo
-	[[ -z "$package_list" ]] && package_list="base linux linux-firmware"
-	pacstrap /mnt $package_list
-}
 
 # -------------- USER ----------------#
 
@@ -247,9 +248,9 @@ install_bootloader(){
 
 manage_error_during_install && \
 partition_hard_drive && \
+install_packages && \
 generate_locales && \
 set_hostname && \
-install_packages && \
 install_bootloader && \
 add_user && \
 add_config
