@@ -15,7 +15,7 @@ echo "[baraud]" >> ./baraud_mirror
 echo "SigLevel = Optional TrustAll" >> ./baraud_mirror
 echo "Server = https://arch-mirror.baraud.fr" >> ./baraud_mirror
 private_mirror="./baraud_mirror"
-package_list=baraud-base baraud-desktop
+package_list="baraud-base baraud-desktop"
 
 manage_error_during_install(){
 	set -uo pipefail
@@ -36,7 +36,7 @@ is_uefi() {
 }
 
 get_drive_to_install(){
-	devicelist=$(lsblkrrrplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
+	devicelist=$(lsblk size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
 	device=$(dialog --stdout --menu "Select installtion disk" 0 0 0 ${devicelist}) || exit 1
 }
 
@@ -92,21 +92,21 @@ format_all_in_one_drive_bios(){
 	mount "${part_root}" /mnt
 }
 
-format_with_sepatate_home_uefi(){
+format_with_separate_home_uefi(){
 	echo "Format with separate home is not supported yet"
 	exit 1
 }
 
-format_with_sepatate_home_bios(){
+format_with_separate_home_bios(){
 	echo "Format with separate home is not supported yet"
 	exit 1
 }
 
 partition_hard_drive(){
 	get_partition_template
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && { is_uefi && format_all_in_on_drive_uefi || format_all_in_on_drive_bios }
-	[[ "$partition_type" == "SEPARATED_HOME" ]] && { is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios }
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] || { echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1  }
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios 
+	[[ "$partition_type" == "SEPARATED_HOME" ]] && is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios 
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] ||  echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1  
 }
 
 ################# INSTALL LINUX #################
@@ -179,7 +179,7 @@ update_repo() {
 
 install_packages(){
 	update_repo
-	[[ -z $package_list ]] package_list="base linux linux-firmware"
+	[[ -z $package_list ]] && package_list="base linux linux-firmware"
 	pacstrap /mnt $package_list
 }
 
