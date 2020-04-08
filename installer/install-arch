@@ -120,12 +120,10 @@ update_mirror_list(){
 	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
 	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
 	pacman -Sy
-	cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 }
 
 update_private_mirror(){
 	cat /etc/pacman.conf $private_mirror > /etc/pacman.conf
-	cat /mnt/pacman.conf $private_mirror > /mnt/etc/pacman.conf
 	pacman -Sy
 }
 
@@ -135,10 +133,17 @@ update_repo() {
         pacman -Sy
 }
 
+update_repo_install_linux(){
+	cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
+	cp /etc/pacman.conf /mnt/etc/pacman.conf
+	arch-chroot /mnt pacman -Sy
+}
+
 install_packages(){
 	update_repo
 	[[ -z "$package_list" ]] && package_list="base linux linux-firmware"
 	pacstrap /mnt $package_list
+	update_repo_install_linux
 }
 
 # -------------- NETWORK ----------------#
