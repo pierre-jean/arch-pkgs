@@ -115,7 +115,7 @@ partition_hard_drive(){
 # -------------- PACKAGES ----------------#
 
 update_mirror_list(){
-	pacman -Sy --no-confirm pacman-contrib
+	pacman -Sy --noconfirm pacman-contrib
 	curl -s "$mirror_list_url" | \
 	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
 	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
