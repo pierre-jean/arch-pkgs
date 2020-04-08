@@ -6,6 +6,17 @@
 
 ################# GLOBAL BATCH SETTINGS #################
 
+partition_type="ALL_IN_ONE_DRIVE"
+locale="en_GB.UTF-8 UTF-8"
+keyboard_layout="uk"
+mirror_list_url="https://www.archlinux.org/mirrorlist/?country=GB&protocol=https&use_mirror_status=on"
+timezone="Europe/London"
+echo "[baraud]" >> ./baraud_mirror
+echo "SigLevel = Optional TrustAll" >> ./baraud_mirror
+echo "Server = https://arch-mirror.baraud.fr" >> ./baraud_mirror
+private_mirror="./baraud_mirror"
+package_list=baraud-base baraud-desktop
+
 manage_error_during_install(){
 	set -uo pipefail
 	trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
@@ -100,134 +111,144 @@ partition_hard_drive(){
 
 ################# INSTALL LINUX #################
 
-get_locale(){
-	locale_list=ls /usr/share/kbd/keymaps/**/*.maps.gz | sed 's:\(.*\)/\(.*\)\.map\.gz:\2 (\1)' 
-	locale=$(dialog --stdout --menu "Select keyboard layout" 0 0 0  )
-}
+# -------------- NETWORK ----------------#
 
-get_keyboard_layout(){
-}
-
-generate_locales(){
-	[[ -z $locale ]] { echo "locale variable must be set" && exit 1 }
-	[[ -z $keyboard_layout ]] { echo "keyboard_layout must be set" && exit 1 }
-	echo "en_GB.UTF-8 UTF-8" >> /mnt/etc/locale.gen
-	echo "KEYMAP=uk" >> /mnt/etc/vconsole.conf
-	arch-chroot /mnt locale-gen
-}
-
-update_repo() {
-	MIRRORLIST_URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=https&use_mirror_status=on"
-
-	pacman -Sy --noconfirm pacman-contrib
-	
-	echo "Updating mirror list"
-	curl -s "$MIRRORLIST_URL" | \
-	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
-	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
-	cat >>/etc/pacman.conf <<EOF
-	[baraud]
-	SigLevel = Optional TrustAll
-	Server = https://arch-mirror.baraud.fr
-EOF
-        
-        pacman -Sy
-}
-
-update_repo_final_machine() {
-	cat >>/mnt/etc/pacman.conf <<EOF
-	[baraud]
-	SigLevel = Optional TrustAll
-	Server = https://arch-mirror.baraud.fr
-EOF
-
-	arch-chroot /mnt/ pacman -Sy 
-}
-
-ask_password(){
-	password=$(dialog --stdout --passwordbox "Enter admin password" 0 0) || exit 1
-	clear
-	: ${password:?"password cannot be empty"}
-	password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
-	clear
-
-}
-
-select_options(){
-	loadkeys uk
+get_hostname(){
 	hostname=$(dialog --stdout --inputbox "Enter hostname" 0 0) || exit 1
 	clear
 	: ${hostname:?"hostname cannot be empty"}
-
-	user=$(dialog --stdout --inputbox "Enter admin username" 0 0) || exit 1
-	clear
-	: ${user:?"user cannot be empty"}
-
-	ask_password
-
-	[[ "$password" == "$password2" ]] || ask_password
-
-	devicelist=$(lsblk -dplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
-	device=$(dialog --stdout --menu "Select installtion disk" 0 0 0 ${devicelist}) || exit 1
-	clear
 }
 
+set_hostname(){
+	[[ -z $hostname ]] && get_hostname
+	echo "${hostname}" > /mnt/etc/hostname
+}
 
+# -------------- LOCALES ----------------#
+
+get_locale(){
+	locale_list=$(cut -d '#' -f2 /etc/locale.gen)
+	locale=$(dialog --stdout --menu "Select locale computer" $locale_list 0 0 0  )
+}
+
+get_keyboard_layout(){
+	keyboard_layout_list=$(ls /usr/share/kbd/keymaps/**/*.map.gz | sed 's:\(.*\)/\(.*\)\.map\.gz:\2 (\1):')
+	keyboard_layout=$(dialog --stdout --menu "Select keyboard layout" $keyboard_layout_list 0 0 0  )
+}
+
+get_timezone(){
+	timezone_list=$(ls /usr/share/kbd/keymaps/**/*.map.gz | sed 's:\(.*\)/\(.*\)\.map\.gz:\2 (\1):')
+	timezone=$(dialog --stdout --menu "Select a timezone" $timezone_list 0 0 0  )
+}
 
 generate_locales(){
-	echo "en_GB.UTF-8 UTF-8" >> /mnt/etc/locale.gen
-	echo "KEYMAP=uk" >> /mnt/etc/vconsole.conf
+	[[ -z $locale ]] && get_locale
+	[[ -z $keyboard_layout ]] get_keyboard_layout
+	[[ -z $timezone ]] get_timezone
+	echo $locale >> /mnt/etc/locale.gen
+	echo $keyboard_layout >> /mnt/etc/vconsole.conf
+	arch-chroot /mnt ln -sf "/usr/share/zoneinfo/$timezone" /etc/localtime
 	arch-chroot /mnt locale-gen
+	arch-chroot /mnt hwclock --systohc
+	loadkeys $keyboard_layout
 }
 
-install_bootloader_uefi(){
-	arch-chroot /mnt bootctl install
-	cat <<EOF > /mnt/boot/loader/loader.conf
-	default arch
-	EOF
 
-	cat <<EOF > /mnt/boot/loader/entries/arch.conf
-	title    Arch Linux
-	linux    /vmlinuz-linux
-	initrd   /initramfs-linux.img
-	options  root=PARTUUID=$(blkid -s PARTUUID -o value "$part_root") rw
-EOF
+# -------------- PACKAGES ----------------#
+
+update_mirror_list(){
+	pacman -Sy --no-confirm pacman-contrib
+	curl -s "$mirror_list_url" | \
+	    sed -e 's/^#Server/Server/' -e '/^#/d' | \
+	    rankmirrors -n 5 - > /etc/pacman.d/mirrorlist
+	pacman -Sy
+	cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 }
 
-install_bootloader_bios(){
-	arch-chroot /mnt grub-install --target=i386-pc "${device}"
-	arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+update_private_mirror(){
+	cat /etc/pacman.conf $private_mirror > /etc/pacman.conf
+	cat /mnt/pacman.conf $private_mirror > /mnt/etc/pacman.conf
+	pacman -Sy
+}
+
+update_repo() {
+	[[ -n $mirror_list_url ]] && update_mirror_list
+	[[ -n $private_mirror ]] && update_private_mirror
+        pacman -Sy
 }
 
 install_packages(){
-	pacstrap /mnt linux linux-firmware baraud-base baraud-desktop
+	update_repo
+	[[ -z $package_list ]] package_list="base linux linux-firmware"
+	pacstrap /mnt $package_list
+}
+
+# -------------- USER ----------------#
+
+get_username(){
+	user=$(dialog --stdout --inputbox "Enter admin username" 0 0) || exit 1
+	clear
+	: ${user:?"user cannot be empty"}
+}
+
+get_password(){
+	message="Please enter admin password"
+	while [[ -n $password1 && -n $password2 && $password1 == $password2 ]]; do
+		password=$(dialog --stdout --passwordbox "$message" 0 0) || exit 1
+		clear
+		: ${password:?"password cannot be empty"}
+		password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
+		clear
+		message="Password did not matched"
+	end
+}
+
+add_user(){
+	[[ -z $user ]] && get_username
+	[[ -z $password ]] && get_password
+	[[ -z $shell ]] && /bin/sh
+	arch-chroot /mnt useradd -mU -s "$shell" -G wheel,uucp,video,audio,storage,games,input "$user"
+	arch-chroot /mnt chsh -s $shell
+	echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
+	echo "$user:$password" | chpasswd --root /mnt
+	echo "root:$password" | chpasswd --root /mnt
 }
 
 
+# -------------- CONFIG ----------------#
 
-manage_error_during_install
-update_repo
-select_options
-timedatectl set-ntp true
-is_uefi && format_uefi || format_bios
-install_packages
-update_repo_final_machine
+add_config(){
+}
 
-genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
+# --------------- BOOTLOADER ------------#
 
-is_uefi && install_bootloader_uefi || install_bootloader_bios
+install_bootloader_uefi(){
+       arch-chroot /mnt bootctl install
+       echo "default arch" > /mnt/boot/loader/loader.conf
+       echo "title    Arch Linux" > /mnt/boot/loader/entries/arch.conf
+       echo "linux    /vmlinuz-linux" >> /mnt/boot/loader/entries/arch.conf
+       echo "initrd   /initramfs-linux.img" >> /mnt/boot/loader/entries/arch.conf
+       echo "options  root=PARTUUID=$(blkid -s PARTUUID -o value "$part_root") rw" >> /mnt/boot/loader/entries/arch.conf
+}
 
-generate_locales
+install_bootloader_bios(){
+       arch-chroot /mnt pacman -Sy grub
+       arch-chroot /mnt grub-install --target=i386-pc "${device}"
+       arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+}
 
-arch-chroot /mnt useradd -mU -s /usr/bin/zsh -G wheel,uucp,video,audio,storage,games,input "$user"
-arch-chroot /mnt chsh -s /usr/bin/zsh
-arch-chroot /mnt ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
-arch-chroot /mnt systemctl enable dhcpcd
+install_bootloader(){
+	genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
+	is_uefi && install_bootloader_uefi || install_bootloader_bios
+}
 
-echo "exec bspwm" > /mnt/home/$user/.xinitrc
+# -------------- INSTALL ----------------#
 
-echo "${hostname}" > /mnt/etc/hostname
-echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
-
-echo "$user:$password" | chpasswd --root /mnt
-echo "root:$password" | chpasswd --root /mnt
+manage_error_during_install && \
+partition_hard_drive && \
+generate_locales && \
+set_hostname && \
+install_packages && \
+install_bootloader && \
+add_user && \
+add_config
