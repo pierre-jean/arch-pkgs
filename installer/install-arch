@@ -199,13 +199,13 @@ get_username(){
 
 get_password(){
 	message="Please enter admin password"
-	while [[ -n $password1 && -n $password2 && $password1 == $password2 ]]; do
+	while [[ -z "$password1" || -z "$password2" || "$password1" != "$password2" ]]; do
 		password=$(dialog --stdout --passwordbox "$message" 0 0) || exit 1
 		clear
 		: ${password:?"password cannot be empty"}
 		password2=$(dialog --stdout --passwordbox "Enter admin password again" 0 0) || exit 1
 		clear
-		message="Password did not matched"
+		message="Password cannot be empty and need to match. Try again:"
 	done
 }
 
