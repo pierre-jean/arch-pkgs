@@ -70,7 +70,7 @@ format_all_in_one_drive_uefi(){
 }
 
 format_all_in_one_drive_bios(){
-	[[ -z device ]] && get_drive_to_install
+	[[ -z $device ]] && get_drive_to_install
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 1 ))MiB
 
