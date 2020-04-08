@@ -212,7 +212,7 @@ get_password(){
 add_user(){
 	[[ -z "$user" ]] && get_username
 	[[ -z "$password" ]] && get_password
-	[[ -z "$shell" ]] && /bin/sh
+	[[ -z "$shell" ]] && shell="/bin/sh"
 	arch-chroot /mnt useradd -mU -s "$shell" -G wheel,uucp,video,audio,storage,games,input "$user"
 	arch-chroot /mnt chsh -s $shell
 	echo "$user ALL=(ALL:ALL) ALL" >> /mnt/etc/sudoers
