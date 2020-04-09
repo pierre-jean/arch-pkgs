@@ -42,7 +42,6 @@ get_drive_to_install(){
 
 format_all_in_one_drive_uefi(){
 	[[ -z "$device" ]] && get_drive_to_install
-echo "Selected device: $device"
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 129 + 1 ))MiB
 
@@ -72,7 +71,6 @@ echo "Selected device: $device"
 
 format_all_in_one_drive_bios(){
 	[[ -z "$device" ]] && get_drive_to_install
-echo "Selected device: $device"
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 1 ))MiB
 
@@ -94,6 +92,10 @@ echo "Selected device: $device"
 	mount "${part_root}" /mnt
 }
 
+format_all_in_one_drive(){
+	is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios
+}
+
 format_with_separate_home_uefi(){
 	echo "Format with separate home is not supported yet"
 	exit 1
@@ -104,11 +106,15 @@ format_with_separate_home_bios(){
 	exit 1
 }
 
+format_with_separate_home(){
+	is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios
+}
+
 partition_hard_drive(){
 	get_partition_template
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && ( is_uefi && format_all_in_one_drive_uefi || format_all_in_one_drive_bios )
-	[[ "$partition_type" == "SEPARATED_HOME" ]] && ( is_uefi && format_with_separate_home_uefi || format_with_separate_home_bios )
-	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] ||  ( echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1 )
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && format_all_in_one_drive
+	[[ "$partition_type" == "SEPARATED_HOME" ]] && format_with_separate_home
+	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] || [[ "$partition_type" == "SEPARATED_HOME" ]] || { echo "Unknow partition_type $partition_type, should be either ALL_IN_ONE_DRIVE or SEPARATED_HOME" && exit 1 }
 }
 
 ################# INSTALL LINUX #################
@@ -241,12 +247,10 @@ install_bootloader_uefi(){
 }
 
 install_bootloader_bios(){
-echo "Device is $device before asking"
 	[[ -z "$device" ]] && get_drive_to_install
-echo "Device is $device after asking"
-       arch-chroot /mnt pacman -Sy grub
-       arch-chroot /mnt grub-install --target=i386-pc "$device"
-       arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+	arch-chroot /mnt pacman -Sy grub
+	arch-chroot /mnt grub-install --target=i386-pc "$device"
+	arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 install_bootloader(){
@@ -257,17 +261,10 @@ install_bootloader(){
 # -------------- INSTALL ----------------#
 
 manage_error_during_install && \
-echo "1 ---------DEVICE is $device ------------"
 partition_hard_drive && \
-echo "2 ---------DEVICE is $device ------------"
 install_packages && \
-echo "3 ---------DEVICE is $device ------------"
 generate_locales && \
-echo "4 ---------DEVICE is $device ------------"
 set_hostname && \
-echo "5 ---------DEVICE is $device ------------"
 install_bootloader && \
-echo "6 ---------DEVICE is $device ------------"
 add_user && \
-echo "7 ---------DEVICE is $device ------------"
 add_config
