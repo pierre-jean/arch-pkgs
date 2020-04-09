@@ -49,8 +49,8 @@ compute_partitions_size(){
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 1 + $uefi_size ))MiB
 	root_begin=$swap_end
-	[[ $device == $device_home ]] && compute_part_home_on_shared_device || root_end="100%"
-	[[ $device == $device_home ]] && home_begin = $root_end || home_begin="1MiB"
+	[[ $device == $device_home ]] && compute_part_root_on_shared_device || root_end="100%"
+	[[ $device == $device_home ]] && home_begin=$root_end || home_begin="1MiB"
 	home_end="100%"
 }
 
