@@ -71,7 +71,7 @@ format_and_mount(){
 	is_uefi && part_boot_id="^${device}p?1$" 
 	is_uefi && part_swap_id="^${device}p?2$" || part_swap_id="^${device}p?1$"
 	is_uefi && part_root_id="^${device}p?3$" || part_root_id="^${device}p?2$"
-	if [[ "Sdevice" == "$device_home" ]]
+	if [[ "$device" == "$device_home" ]]
 	then
 		is_uefi && part_home_id="^${device}p?4$" || part_home_id="^${device}p?3$"
 	else
