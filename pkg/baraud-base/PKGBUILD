@@ -1,6 +1,6 @@
 pkgname=baraud-base
-pkgver=0.0.2
-pkgrel=2
+pkgver=0.0.3
+pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
 url="https://github.com/pierre-jean/arch-pkgs"
@@ -42,3 +42,4 @@ depends=(
 	'neovim'
 	'zsh'
 	)
+
