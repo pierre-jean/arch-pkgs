@@ -33,7 +33,7 @@ is_uefi() {
 get_drive_to_install(){
 	devicelist=$(lsblk -dplnx size -o name,size | grep -Ev "boot|rpmb|loop" | tac)
 	device=$(dialog --stdout --menu "Select disk for root" 0 0 0 ${devicelist}) || exit 1
-	device=$(dialog --stdout --menu "Select disk for home" 0 0 0 ${devicelist}) || exit 1
+	device_home=$(dialog --stdout --menu "Select disk for home" 0 0 0 ${devicelist}) || exit 1
 }
 
 compute_part_root_on_shared_device(){
