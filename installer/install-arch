@@ -110,11 +110,11 @@ partition_hard_drive(){
 	compute_partitions_size
 	is_uefi && label="gpt" || label="msdos"
 
-	parted ${device} -- script mklabel "$label"
+	parted ${device} --script mklabel "$label"
 	is_uefi && parted ${device} --script mkpart ESP fat32 1MiB "$uefi_size"MiB
-	parted ${device} -- script mkpart primary linux-swap "$uefi_size"MiB "$swap_end"
-	parted ${device} -- script mkpart primary ext4 "$swap_end" "$root_end"
-	parted ${device_home} -- script mkpart primary ext4 "$home_begin" "$home_end"
+	parted ${device} --script mkpart primary linux-swap "$uefi_size"MiB "$swap_end"
+	parted ${device} --script mkpart primary ext4 "$swap_end" "$root_end"
+	parted ${device_home} --script mkpart primary ext4 "$home_begin" "$home_end"
 	is_uefi && parted ${device} --script set 1 boot on || parted ${device} --script set 2 boot on
 	[[ is_uefi ]] && format_mount_uefi || format_and_mount_bios
 }
