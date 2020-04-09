@@ -248,8 +248,8 @@ install_bootloader_bios(){
 }
 
 generate_fstab(){
-	part_home_name=$( $part_home | cut =d '/' -f2 )
-	home_uuid=$( lsblk -or NAME,UUID ${device_home} | cut -d ` ` -f2 )
+	part_home_name=$( $part_home | cut -d '/' -f3 )
+	home_uuid=$( lsblk -ro NAME,UUID ${device_home} | grep "${part_home_name}" | cut -d ` ` -f2 )
 	echo "home	UUID=${home_uuid}	 none	luks" >> /mnt/etc/crypttab
 	genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 }
