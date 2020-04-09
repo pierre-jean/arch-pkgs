@@ -54,22 +54,40 @@ compute_partitions_size(){
 	home_end="100%"
 }
 
-format_and_mount_uefi(){
-	part_boot="$(ls ${device}* | grep -E "^${device}p?1$")"
-	part_swap="$(ls ${device}* | grep -E "^${device}p?2$")"
-	part_root="$(ls ${device}* | grep -E "^${device}p?3$")"
+set_disk_label(){
+	is_uefi && label="gpt" || label="msdos"
+	parted --script ${device} -- mklabel "$label"
+}
+
+create_partitions(){
+	is_uefi && parted --script ${device} -- mkpart ESP fat32 1MiB "$uefi_size"MiB
+	parted --script ${device} -- mkpart primary linux-swap "$uefi_size"MiB "$swap_end"
+	parted --script ${device} -- mkpart primary ext4 "$swap_end" "$root_end"
+	parted --script ${device_home} -- mkpart primary ext4 "$home_begin" "$home_end"
+	is_uefi && parted --script ${device} -- set 1 boot on || parted --script ${device} -- set 2 boot on
+}
+
+format_and_mount(){
+	is_uefi && part_boot_id="^${device}p?1$" 
+	is_uefi && part_swap_id="^${device}p?2$" || part_swap_id="^${device}p?1$"
+	is_uefi && part_root_id="^${device}p?3$" || part_root_id="^${device}p?2$"
 	if [[ "Sdevice" == "$device_home" ]]
 	then
-		part_home="$(ls ${device}* | grep -E "^${device}p?4$")"
+		is_uefi && part_home_id="^${device}p?4$" || part_home_id="^${device}p?3$"
 	else
-		part_home="$(ls ${device_home}* | grep -E "^${device}p?1$")"
+		part_home_id="^${device_home}p?1$"
 	fi
-	wipefs "${part_boot}"
+	part_boot="$(ls ${device}* | grep -E "$part_boot_id")"
+	part_swap="$(ls ${device}* | grep -E "$part_swap_id")"
+	part_root="$(ls ${device}* | grep -E "$part_root_id")"
+	part_home="$(ls ${device}* | grep -E "$part_home_id")"
+	
+	is_uefi && wipefs "${part_boot}"
 	wipefs "${part_swap}"
 	wipefs "${part_root}"
 	wipefs "${part_home}"
 
-	mkfs.vfat -F32 "${part_boot}"
+	is_uefi && mkfs.vfat -F32 "${part_boot}"
 	mkswap "${part_swap}"
 	mkfs.ext4 "${part_root}"
 	mkfs.ext4 "${part_home}"
@@ -82,41 +100,12 @@ format_and_mount_uefi(){
 	mount "${part_boot}" /mnt/boot
 }
 
-format_and_mount_bios(){
-	part_swap="$(ls ${device}* | grep -E "^${device}p?1$")"
-	part_root="$(ls ${device}* | grep -E "^${device}p?2$")"
-	if [[ "$device" == "$device_home" ]]
-	then
-		part_home="$(ls ${device}* | grep -E "^${device}p?3$")"
-	else
-		part_home="$(ls ${device_home}* | grep -E "^${device}p?1$")"
-	fi
-	wipefs "${part_swap}"
-	wipefs "${part_root}"
-	wipefs "${part_home}"
-
-	mkswap "${part_swap}"
-	mkfs.ext4 "${part_root}"
-	mkfs.ext4 "${part_home}"
-
-	swapon "${part_swap}"
-	mount "${part_root}" /mnt
-	mkdir /mnt/home
-	mount "${part_home}" /mnt/home
-}
-
 partition_hard_drive(){
 	get_drive_to_install
+	set_disk_label
 	compute_partitions_size
-	is_uefi && label="gpt" || label="msdos"
-
-	parted --script ${device} -- mklabel "$label"
-	is_uefi && parted --script ${device} -- mkpart ESP fat32 1MiB "$uefi_size"MiB
-	parted --script ${device} -- mkpart primary linux-swap "$uefi_size"MiB "$swap_end"
-	parted --script ${device} -- mkpart primary ext4 "$swap_end" "$root_end"
-	parted --script ${device_home} -- mkpart primary ext4 "$home_begin" "$home_end"
-	is_uefi && parted --script ${device} -- set 1 boot on || parted --script ${device} -- set 2 boot on
-	[[ is_uefi ]] && format_and_mount_uefi || format_and_mount_bios
+	create_partitions
+	format_and_mount
 }
 
 ################# INSTALL LINUX #################
