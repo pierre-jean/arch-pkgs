@@ -90,12 +90,13 @@ format_and_mount(){
 	is_uefi && mkfs.vfat -F32 "${part_boot}"
 	mkswap "${part_swap}"
 	mkfs.ext4 "${part_root}"
-	mkfs.ext4 "${part_home}"
+	cryptsetup open "${part_home}" home
+	mkfs.ext4 /dev/mapper/home
 
 	swapon "${part_swap}"
 	mount "${part_root}" /mnt
 	mkdir /mnt/home
-	mount "${part_home}" /mnt/home
+	mount /dev/mapper/home /mnt/home
 	is_uefi && mkdir /mnt/boot
 	is_uefi && mount "${part_boot}" /mnt/boot
 	return 0
