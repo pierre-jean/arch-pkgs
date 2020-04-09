@@ -92,7 +92,7 @@ format_and_mount(){
 	mkswap "${part_swap}"
 	mkfs.ext4 "${part_root}"
 	echo "${password}" | cryptsetup luksFormat --batch-mode "${part_home}" -
-	cryptsetup open "${part_home}" home
+	echo "${password}" | cryptsetup open --batch-mode "${part_home}" home -
 	mkfs.ext4 /dev/mapper/home
 
 	swapon "${part_swap}"
@@ -249,7 +249,7 @@ install_bootloader_bios(){
 
 generate_fstab(){
 	part_home_name=$( echo $part_home | cut -d '/' -f3 )
-	home_uuid=$( lsblk -ro NAME,UUID ${device_home} | grep "${part_home_name}" | cut -d ` ` -f2 )
+	home_uuid=$( lsblk -ro NAME,UUID ${device_home} | grep "${part_home_name}" | cut -d ' ' -f2 )
 	echo "home	UUID=${home_uuid}	 none	luks" >> /mnt/etc/crypttab
 	genfstab -t PARTUUID /mnt >> /mnt/etc/fstab
 }
