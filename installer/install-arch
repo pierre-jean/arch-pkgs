@@ -91,8 +91,8 @@ format_and_mount(){
 	is_uefi && mkfs.vfat -F32 "${part_boot}"
 	mkswap "${part_swap}"
 	mkfs.ext4 "${part_root}"
-	$(echo "${password}" | cryptsetup luksFormat --batch-mode "${part_home}" -)
-	$(echo "${password}" | cryptsetup open --batch-mode "${part_home}" home - )
+	$(echo -n "${password}" | cryptsetup luksFormat --batch-mode "${part_home}" -d -)
+	$(echo -n "${password}" | cryptsetup open --batch-mode "${part_home}" home -d - )
 	mkfs.ext4 /dev/mapper/home
 
 	swapon "${part_swap}"
