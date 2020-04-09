@@ -80,7 +80,7 @@ format_and_mount(){
 	part_boot="$(ls ${device}* | grep -E "$part_boot_id")"
 	part_swap="$(ls ${device}* | grep -E "$part_swap_id")"
 	part_root="$(ls ${device}* | grep -E "$part_root_id")"
-	part_home="$(ls ${device}* | grep -E "$part_home_id")"
+	part_home="$(ls ${device_home}* | grep -E "$part_home_id")"
 	
 	is_uefi && wipefs "${part_boot}"
 	wipefs "${part_swap}"
