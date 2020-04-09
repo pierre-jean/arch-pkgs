@@ -98,6 +98,7 @@ format_and_mount(){
 	mount "${part_home}" /mnt/home
 	is_uefi && mkdir /mnt/boot
 	is_uefi && mount "${part_boot}" /mnt/boot
+	return 0
 }
 
 partition_hard_drive(){
