@@ -114,6 +114,7 @@ partition_hard_drive(){
 	get_partition_template
 	[[ "$partition_type" == "ALL_IN_ONE_DRIVE" ]] && format_all_in_one_drive
 	[[ "$partition_type" == "SEPARATED_HOME" ]] && format_with_separate_home
+	return 0
 }
 
 ################# INSTALL LINUX #################
