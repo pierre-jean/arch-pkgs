@@ -241,8 +241,9 @@ install_bootloader_uefi(){
 }
 
 install_bootloader_bios(){
+echo "Device is $device before asking"
 	[[ -z "$device" ]] && get_drive_to_install
-	echo "Device is $device"
+echo "Device is $device after asking"
        arch-chroot /mnt pacman -Sy grub
        arch-chroot /mnt grub-install --target=i386-pc "$device"
        arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
@@ -256,10 +257,17 @@ install_bootloader(){
 # -------------- INSTALL ----------------#
 
 manage_error_during_install && \
+echo "1 ---------DEVICE is $device ------------"
 partition_hard_drive && \
+echo "2 ---------DEVICE is $device ------------"
 install_packages && \
+echo "3 ---------DEVICE is $device ------------"
 generate_locales && \
+echo "4 ---------DEVICE is $device ------------"
 set_hostname && \
+echo "5 ---------DEVICE is $device ------------"
 install_bootloader && \
+echo "6 ---------DEVICE is $device ------------"
 add_user && \
+echo "7 ---------DEVICE is $device ------------"
 add_config
