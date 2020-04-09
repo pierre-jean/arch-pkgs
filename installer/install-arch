@@ -38,17 +38,17 @@ get_drive_to_install(){
 
 compute_part_root_on_shared_device(){
 	device_size = parted $device_root unit GiB print | grep $device_root | cut -d ' ' -f3 | cut -d '.' -f1
-	[[ $device_size > 130 ]] && root_end="60GiB" 
-	[[ $device_size <= 130 ]] && root_end="40GiB" 
-	[[ $device_size <= 80 ]] && root_end="20GiB" 
-	[[ $device_size <= 20 ]] && root_end="50%"
+	[[ $device_size -gt 130 ]] && root_end="60GiB" 
+	[[ $device_size -le 130 ]] && root_end="40GiB" 
+	[[ $device_size -le 80 ]] && root_end="20GiB" 
+	[[ $device_size -le 20 ]] && root_end="50%"
 }
 
 compute_partitions_size(){
 	is_uefi && uefi_size=129 || uefi_size=0
 	swap_size=$(free --mebi | awk '/Mem:/ {print $2}')
 	swap_end=$(( $swap_size + 1 + $uefi_size ))MiB
-	root_begin=$(( $swap_end ))MiB
+	root_begin=$swap_end
 	[[ $device == $device_home ]] && compute_part_home_on_shared_device || root_end="100%"
 	[[ $device == $device_home ]] && home_begin = $root_end || home_begin="0MiB"
 	home_end="100%"
@@ -59,6 +59,7 @@ format_and_mount_uefi(){
 	part_swap="$(ls ${device}* | grep -E "^${device}p?2$")"
 	part_root="$(ls ${device}* | grep -E "^${device}p?3$")"
 	if [[ "Sdevice" == "$device_home" ]]
+	then
 		part_home="$(ls ${device}* | grep -E "^${device}p?4$")"
 	else
 		part_home="$(ls ${device_home}* | grep -E "^${device}p?1$")"
@@ -85,6 +86,7 @@ format_and_mount_bios(){
 	part_swap="$(ls ${device}* | grep -E "^${device}p?1$")"
 	part_root="$(ls ${device}* | grep -E "^${device}p?2$")"
 	if [[ "$device" == "$device_home" ]]
+	then
 		part_home="$(ls ${device}* | grep -E "^${device}p?3$")"
 	else
 		part_home="$(ls ${device_home}* | grep -E "^${device}p?1$")"
