@@ -26,6 +26,7 @@ manage_error_during_install(){
 
 ################# HARD DRIVE PARTITION #################
 
+
 is_uefi() {
 	ls /sys/firmware/efi/efivars &> /dev/null
 }
@@ -90,6 +91,7 @@ format_and_mount(){
 	is_uefi && mkfs.vfat -F32 "${part_boot}"
 	mkswap "${part_swap}"
 	mkfs.ext4 "${part_root}"
+	echo "${password}" | cryptsetup luksFormat --batch-mode "${part_home}"
 	cryptsetup open "${part_home}" home
 	mkfs.ext4 /dev/mapper/home
 
@@ -251,6 +253,15 @@ install_bootloader(){
 }
 
 # -------------- INSTALL ----------------#
+
+get_all_input(){
+	[[ -z "${locale}" ]] && get_locale
+	[[ -z "${keyboard_layout}" ]] && get_keyboard_layout
+	[[ -z "${timezone}" ]] && get_timtimezone
+	[[ -z "${user}" ]] && get_username
+	[[ -z "${password}" ]] && get_password
+
+}
 
 manage_error_during_install && \
 partition_hard_drive && \
