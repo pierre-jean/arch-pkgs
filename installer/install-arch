@@ -96,8 +96,8 @@ format_and_mount(){
 	mount "${part_root}" /mnt
 	mkdir /mnt/home
 	mount "${part_home}" /mnt/home
-	mkdir /mnt/boot
-	mount "${part_boot}" /mnt/boot
+	is_uefi && mkdir /mnt/boot
+	is_uefi && mount "${part_boot}" /mnt/boot
 }
 
 partition_hard_drive(){
