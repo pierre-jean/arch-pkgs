@@ -116,7 +116,7 @@ partition_hard_drive(){
 	parted --script ${device} -- mkpart primary ext4 "$swap_end" "$root_end"
 	parted --script ${device_home} -- mkpart primary ext4 "$home_begin" "$home_end"
 	is_uefi && parted --script ${device} -- set 1 boot on || parted --script ${device} -- set 2 boot on
-	[[ is_uefi ]] && format_mount_uefi || format_and_mount_bios
+	[[ is_uefi ]] && format_and_mount_uefi || format_and_mount_bios
 }
 
 ################# INSTALL LINUX #################
