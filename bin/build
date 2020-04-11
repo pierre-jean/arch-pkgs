@@ -21,6 +21,7 @@ mkdir -p "$CHROOT"
     systemd-sysvcompat tar texinfo usbutils util-linux which base-devel
 
 for package in $PACKAGES; do (
+    echo "=== Building package $package ==="
     cd "$package" || ( echo "No such directory: $package"; exit 1 )
     rm -f ./*.pkg.tar.xz
     makechrootpkg -cur "$CHROOT"

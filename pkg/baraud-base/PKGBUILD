@@ -1,5 +1,5 @@
 pkgname=baraud-base
-pkgver=0.0.3
+pkgver=0.0.4
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
@@ -8,6 +8,9 @@ license=('MIT')
 depends=(
         'linux'
 	'linux-firmware'
+	)
+
+depends+=(
 	'filesystem'
 	'gcc-libs'
 	'glibc'
@@ -30,7 +33,6 @@ depends=(
 	'xz'
 	'licenses'
 	'pacman'
-	'grub'
 	'systemd'
 	'systemd-sysvcompat'
 	'iputils'
@@ -39,7 +41,11 @@ depends=(
 	'dhcpcd'
 	'networkmanager'
 	'sudo'
+	)
+
+depends+=(
 	'neovim'
 	'zsh'
 	)
 
+install=baraud-base.install
