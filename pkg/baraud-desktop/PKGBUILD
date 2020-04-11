@@ -1,12 +1,16 @@
 pkgname=baraud-desktop
-pkgver=0.0.3
+pkgver=0.0.4
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
 url="https://github.com/pierre-jean/arch-pkgs"
 license=('MIT')
 install=baraud-desktop.install
-depends=(
+
+depends=(baraud-base)
+
+# Xorg
+depends+=(
 	'xf86-video-vesa'
 	'xorg-bdftopcf'
 	'xorg-docs'
@@ -56,13 +60,19 @@ depends=(
 	'xorg-xwd'
 	'xorg-xwininfo'
 	'xorg-xwud'
-	'xorg-xinit'
+	'xorg-xinit')
+
+# DWM
+depends+=(
 	'sxhkd'
 	'bspwm'
 	'xwallpaper'
 	'xfce4-terminal'
 	'dmenu'
 	'rxvt-unicode'
+	'st'
+	'lightdm'
+	'lightdm-gtk-greeter'
 	)
 
 rootdir=$PWD
@@ -70,3 +80,5 @@ rootdir=$PWD
 package() { 
 	cp -a "$rootdir/files/"* "$pkgdir"
 }
+
+install=baraud-desktop.install

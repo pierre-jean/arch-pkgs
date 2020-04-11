@@ -3,5 +3,5 @@ post_install(){
 }
 
 post_upgrade(){
-	cp /usr/share/baraud/X11/xinit/xinitrc /etc/X11/xinit/xinitrc
+	cp /usr/share/baraud/lightdm/* /etc/lightdm/
 }

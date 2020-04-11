@@ -1,3 +1,0 @@
-xwallpaper --zoom /usr/share/baraud/wallpaper.jpg
-sxhkd -c /usr/share/baraud/sxhkd/sxhkdrc &
-exec bspwm
