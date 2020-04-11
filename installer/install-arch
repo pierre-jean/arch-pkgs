@@ -227,7 +227,8 @@ add_user(){
 # -------------- CONFIG ----------------#
 
 add_config(){
-	return 0
+	arch-chroot /mnt (su $user && git clone $ARCH_ENV_URL $XDG_DATA_HOME/env)
+	arch_chroot /mnt (su $user && chmod +x $XDG_DATA_HOME/env/deploy && $XDG_DATA_HOME/env/deploy)
 }
 
 # --------------- BOOTLOADER ------------#
