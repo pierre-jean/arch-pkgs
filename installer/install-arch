@@ -15,7 +15,7 @@ echo "SigLevel = Optional TrustAll" >> ./baraud_mirror
 echo "Server = https://arch-mirror.baraud.fr" >> ./baraud_mirror
 private_mirror="./baraud_mirror"
 package_list="baraud-base baraud-desktop"
-ARCH_ENV_URL="github.com/pierre-jean/arch-env"
+ARCH_ENV_URL="https://github.com/pierre-jean/arch-env.git"
 XDG_DATA_HOME="$HOME/.local/share"
 
 manage_error_during_install(){
