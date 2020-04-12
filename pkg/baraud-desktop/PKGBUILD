@@ -79,7 +79,7 @@ depends+=(
 	'firefox'
 	'gimp'
 	'inkscape'
-	'libre-office'
+	'libreoffice'
 	'sxiv'
 	'imagemagick'
 )
