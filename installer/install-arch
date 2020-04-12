@@ -230,7 +230,7 @@ add_user(){
 
 add_config(){
 	arch-chroot /mnt su - $user -c "git clone $ARCH_ENV_URL /home/$user/.local/.share/env"
-	arch_chroot /mnt su - $user -c "chmod +x /home/$user/.local/share/env/deploy /home/$user/.local/share/env/deploy"
+	arch-chroot /mnt su - $user -c "chmod +x /home/$user/.local/share/env/deploy /home/$user/.local/share/env/deploy"
 }
 
 # --------------- BOOTLOADER ------------#
@@ -272,7 +272,6 @@ get_all_input(){
 	[[ -z "${user}" ]] && get_username
 	[[ -z "${password}" ]] && get_password
 	[[ -z "$hostname" ]] && get_hostname
-
 }
 
 manage_error_during_install && \
