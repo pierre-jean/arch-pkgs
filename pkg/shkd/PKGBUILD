@@ -1,0 +1,26 @@
+pkgname=shkd
+pkgver=0.1.r0.g370f6f8
+pkgrel=1
+pkgdesc="Simple hotkey daemon"
+arch=('any')
+url="https://github.com/baskerville/shkd"
+license=('MIT')
+srcdir=src
+pkgdir=pkg
+
+prepare(){
+	git clone https://github.com/baskerville/shkd.git $srcdir
+}
+
+pkgver(){
+	cd $srcdir
+	git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build(){
+	DESTDIR=$pkgdir make
+}
+
+package(){
+	DESTDIR=$pkgdir make install
+}

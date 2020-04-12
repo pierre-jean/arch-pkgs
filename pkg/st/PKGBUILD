@@ -1,22 +1,26 @@
 pkgname=st
-pkgver=0.8.2
+pkgver=r1091.5703aa0
 pkgrel=1
-pkgdesc="Base system configuration for baraud systems"
+pkgdesc="Simple terminal"
 arch=('any')
-url="https://github.com/pierre-jean/arch-pkgs"
+url="https://st.suckless.org/"
 license=('MIT')
 srcdir=src
 pkgdir=pkg
 
 prepare(){
-	rm -rf $srcdir/* $srcdir/.git
 	git clone https://git.suckless.org/st $srcdir
 }
 
+pkgver(){
+	cd $srcdir
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
 build(){
-	sed -i "s:^PREFIX =.*:PREFIX = ../pkg/usr/local:" config.mk
+	DESTDIR=$pkgdir make
 }
 
 package(){
-	make install
+	DESTDIR=$pkgdir make install
 }
