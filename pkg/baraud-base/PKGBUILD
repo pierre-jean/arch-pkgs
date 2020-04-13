@@ -1,5 +1,5 @@
 pkgname=baraud-base
-pkgver=0.0.6
+pkgver=0.0.7
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
@@ -44,7 +44,9 @@ depends+=(
 	)
 
 depends+=(
+	'base-devel'
 	'unzip'
+	'jq'
 	'ffmpeg'
 	'ncmpc'
 	'git'
