@@ -1,5 +1,5 @@
 pkgname=baraud-desktop
-pkgver=0.0.6
+pkgver=0.0.8
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
@@ -76,12 +76,15 @@ depends+=(
 
 # tooling
 depends+=(
+	'xclip'
 	'firefox'
 	'gimp'
 	'inkscape'
 	'libreoffice'
 	'sxiv'
 	'imagemagick'
+	'xarchiver'
+	'mplayer'
 )
 
 rootdir=$PWD

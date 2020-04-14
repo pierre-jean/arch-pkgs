@@ -1,5 +1,5 @@
 pkgname=baraud-base
-pkgver=0.0.7
+pkgver=0.0.8
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
@@ -43,8 +43,35 @@ depends+=(
 	'sudo'
 	)
 
+#base-devel
 depends+=(
-	'base-devel'
+	'autoconf'
+	'automake'
+	'binutils'
+	'bison'
+	'fakeroot'
+	'file'
+	'findutils'
+	'flex'
+	'gawk'
+	'gcc'
+	'gettext'
+	'grep'
+	'groff'
+	'gzip'
+	'libtool'
+	'm4'
+	'make'
+	'pacman'
+	'patch'
+	'pkgconf'
+	'sed'
+	'sudo'
+	'texinfo'
+	'which'
+)
+
+depends+=(
 	'unzip'
 	'jq'
 	'ffmpeg'
@@ -53,6 +80,7 @@ depends+=(
 	'devtools'
 	'neovim'
 	'zsh'
+	'aurutils'
 	)
 
 install=baraud-base.install
