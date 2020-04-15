@@ -11,7 +11,12 @@ CHROOT="$HOME/.local/share/arch-root"
 mkdir -p "$LOCAL_PATH"
 
 ## Sync remote DB to local ##
-rsync "$REMOTE_PATH/$REPO_NAME".{db,files}.tar.xz "$LOCAL_PATH/"
+rsync 	--recursive \
+	--include="$REPO_NAME*" \
+	--exclude="*" \
+	"$REMOTE_PATH/" \
+	"$LOCAL_PATH/"
+
 ln -sf "$REPO_NAME.db.tar.xz" "$LOCAL_PATH/$REPO_NAME.db"
 ln -sf "$REPO_NAME.files.tar.xz" "$LOCAL_PATH/$REPO_NAME.files"
 
@@ -28,9 +33,10 @@ fi
 
 ## Sync local DB to remote ##
 rsync --copy-links \
-	-r \
-	--exclude "*" \
+	--recursive \
 	--include "*.pkg.tar.xz" \
 	--include "*.pkg.tar.zst" \
-	--include "$REPO_NAME.{db,files}{,.tar.xz}" \
-    "$LOCAL_PATH/" "$REMOTE_PATH"
+	--include "$REPO_NAME.*" \
+	--exclude "*" \
+	"$LOCAL_PATH/" \
+	"$REMOTE_PATH"

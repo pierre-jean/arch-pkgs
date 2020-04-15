@@ -27,15 +27,22 @@ for package in $PACKAGES; do (
     makechrootpkg -cur "$CHROOT"
 ) done
 
-rsync "$REMOTE_PATH/$REPO_NAME".{db,files}.tar.xz "$LOCAL_PATH/"
+rsync --recursive \
+	--include="$REPO_NAME*" \
+	--exclude="*" \
+	"$REMOTE_PATH/" \
+	"$LOCAL_PATH"
+
 ln -sf "$REPO_NAME.db.tar.xz" "$LOCAL_PATH/$REPO_NAME.db"
 ln -sf "$REPO_NAME.files.tar.xz" "$LOCAL_PATH/$REPO_NAME.files"
 
-repo-add "$LOCAL_PATH/$REPO_NAME.db.tar.xz" pkg/*/*.pkg.tar.xz
-rsync --copy-links \
-    pkg/*/*.pkg.tar.xz \
-    "$REMOTE_PATH/"
+for package in $PACKAGES; do (
+	repo-add "$LOCAL_PATH/$REPO_NAME.db.tar.xz" "$package/"*.pkg.*
+	rsync "$package/"*.pkg.* "$REMOTE_PATH"
+) done
 
-rsync --copy-links \
-    "$LOCAL_PATH/$REPO_NAME".{db,files}{,.tar.xz} \
-    "$REMOTE_PATH/"
+rsync --recursive --copy-links \
+	--include="$REPO_NAME.*" \
+	--exclude="*" \
+	"$LOCAL_PATH/" \
+	"$REMOTE_PATH"
