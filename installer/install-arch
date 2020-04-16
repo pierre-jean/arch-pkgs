@@ -15,8 +15,7 @@ echo "SigLevel = Optional TrustAll" >> ./baraud_mirror
 echo "Server = https://arch-mirror.baraud.fr" >> ./baraud_mirror
 private_mirror="./baraud_mirror"
 package_list="baraud-base baraud-desktop"
-ARCH_ENV_URL="https://github.com/pierre-jean/arch-env.git"
-XDG_DATA_HOME="$HOME/.local/share"
+ARCH_ENV_URL="git@github.com:pierre-jean/arch-env.git"
 
 manage_error_during_install(){
 	set -o pipefail
@@ -228,10 +227,52 @@ add_user(){
 
 # -------------- CONFIG ----------------#
 
+get_bw_password(){
+	message="Please enter your bitwarden password"
+	while [[ -z "$bw_pass1" ]]  || [[ -z "$bw_pass2" ]] || [[ "$bw_pass1" != "$bw_pass2" ]]; do
+		bw_pass1=$(dialog --stdout --passwordbox "$message" 0 0) || exit 1
+		clear
+		: ${bw_pass1:?"password cannot be empty"}
+		bw_pass2=$(dialog --stdout --passwordbox "Enter bitwarden password again" 0 0) || exit 1
+		clear
+		message="Password cannot be empty and need to match. Try again:"
+	done
+}
+
+get_bw_session(){
+	[[ -z $bw_pass1 ]] get_bw_password
+	bw_session=`echo $bw_pass1 | bw unlock | grep '$ export' | cut -d ' ' -f 2-`
+	bw_pass1=''
+	bw_pass2=''
+}
+
+ssh_deploy_on_gitlab(){
+	ssh_public=(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
+	gitlab_private_token=(bw get password --session $bw_session gitlab_token)
+	curl  --data "{\"title\":\"$hostname\",\"key\":\"$ssh_public\"}" https://api.github.com/user/keys?private_token=$gitlab_private_token
+}
+
+ssh_deploy_on_github(){
+	github_username=(bw get username --session $bw_session github.com)
+	github_password=(bw get password --session $bw_session github.com)
+	ssh_public=(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
+	curl -u "$github_username:$github_password" --data "{\"title\":\"$hostname\",\"key\":\"$ssh_public\"}" https://api.github.com/user/keys
+}
+
+ssh_deploy(){
+	arch-chroot /mnt su - $user -c "mkdir -p /home/$user/.local/share/ssh"
+	arch-chroot /mnt su - $user -c "ssh-keygen -qN $password -f /home/$user/.local/share/ssh/id_rsa"
+	[[ -z $bw_session ]] && get_bw_session
+	ssh_deploy_on_github
+	ssh_deploy_on_gitlab
+}
+
 add_config(){
+	ssh_deploy
 	arch-chroot /mnt su - $user -c "git clone $ARCH_ENV_URL /home/$user/.local/share/env"
 	arch-chroot /mnt su - $user -c "chmod +x /home/$user/.local/share/env/deploy && /home/$user/.local/share/env/deploy"
 }
+
 
 # --------------- BOOTLOADER ------------#
 
@@ -272,6 +313,7 @@ get_all_input(){
 	[[ -z "${user}" ]] && get_username
 	[[ -z "${password}" ]] && get_password
 	[[ -z "$hostname" ]] && get_hostname
+	[[ -z "$bw_session" ]] && get_bw_session
 }
 
 manage_error_during_install && \
