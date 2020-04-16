@@ -4,5 +4,5 @@ post_install(){
 
 post_upgrade(){
 	systemctl enable dhcpcd
-	sed -i '1 i\Include $XDG_DATA_HOME/ssh/config' /etc/ssh/ssh_config
+	sed -i '1 i\Include $XDG_CONFIG_HOME/ssh/config' /etc/ssh/ssh_config
 }
