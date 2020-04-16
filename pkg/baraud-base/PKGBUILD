@@ -1,5 +1,5 @@
 pkgname=baraud-base
-pkgver=0.0.8
+pkgver=0.0.9
 pkgrel=1
 pkgdesc="Base system configuration for baraud systems"
 arch=('any')
@@ -81,6 +81,7 @@ depends+=(
 	'neovim'
 	'zsh'
 	'aurutils'
+	'openssh'
 	)
 
 install=baraud-base.install
