@@ -229,6 +229,8 @@ add_user(){
 # -------------- CONFIG ----------------#
 
 get_bw_password(){
+
+	bw_username=$(dialog --stdout "Enter your bitwarden user" 0 0) || exit 1
 	message="Please enter your bitwarden password"
 	while [[ -z "$bw_pass1" ]]  || [[ -z "$bw_pass2" ]] || [[ "$bw_pass1" != "$bw_pass2" ]]; do
 		bw_pass1=$(dialog --stdout --passwordbox "$message" 0 0) || exit 1
@@ -243,6 +245,7 @@ get_bw_password(){
 get_bw_session(){
 	[[ -z $bw_pass1 ]] && get_bw_password
 	pacman -Sy --noconfirm bitwarden-cli
+	bw login $bw_username $bw_pass1
 	bw_session=`echo $bw_pass1 | bw unlock | grep '$ export' | cut -d ' ' -f 2-`
 	bw_pass1=''
 	bw_pass2=''
