@@ -230,7 +230,7 @@ add_user(){
 
 get_bw_password(){
 
-	bw_username=$(dialog --stdout "Enter your bitwarden user" 0 0) || exit 1
+	bw_username=$(dialog --stdout --inputbox "Enter your bitwarden user" 0 0) || exit 1
 	message="Please enter your bitwarden password"
 	while [[ -z "$bw_pass1" ]]  || [[ -z "$bw_pass2" ]] || [[ "$bw_pass1" != "$bw_pass2" ]]; do
 		bw_pass1=$(dialog --stdout --passwordbox "$message" 0 0) || exit 1
