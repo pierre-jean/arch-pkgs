@@ -241,7 +241,7 @@ get_bw_password(){
 }
 
 get_bw_session(){
-	[[ -z $bw_pass1 ]] get_bw_password
+	[[ -z $bw_pass1 ]] && get_bw_password
 	pacman -Sy --noconfirm bitwarden-cli
 	bw_session=`echo $bw_pass1 | bw unlock | grep '$ export' | cut -d ' ' -f 2-`
 	bw_pass1=''
@@ -272,7 +272,7 @@ ssh_deploy(){
 add_config(){
 	ssh_deploy
 	arch-chroot /mnt su - $user -c "git clone $ARCH_ENV_URL_HTTPS /home/$user/.local/share/env"
-	arch-chroot /mnt su - $user -c "cd /home/$user/.local/share/env/env && git remote set-url origin $ARCH_ENV_URL_GIT"
+	arch-chroot /mnt su - $user -c "cd /home/$user/.local/share/env && git remote set-url origin $ARCH_ENV_URL_GIT"
 	arch-chroot /mnt su - $user -c "chmod +x /home/$user/.local/share/env/deploy && /home/$user/.local/share/env/deploy"
 }
 
