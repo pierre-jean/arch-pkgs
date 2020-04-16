@@ -15,7 +15,8 @@ echo "SigLevel = Optional TrustAll" >> ./baraud_mirror
 echo "Server = https://arch-mirror.baraud.fr" >> ./baraud_mirror
 private_mirror="./baraud_mirror"
 package_list="baraud-base baraud-desktop"
-ARCH_ENV_URL="git@github.com:pierre-jean/arch-env.git"
+ARCH_ENV_URL_GIT="git@github.com:pierre-jean/arch-env.git"
+ARCH_ENV_URL_HTTPS="https://github.com/pierre-jean/arch-env.git"
 
 manage_error_during_install(){
 	set -o pipefail
@@ -241,6 +242,7 @@ get_bw_password(){
 
 get_bw_session(){
 	[[ -z $bw_pass1 ]] get_bw_password
+	pacman -Sy --noconfirm bitwarden-cli
 	bw_session=`echo $bw_pass1 | bw unlock | grep '$ export' | cut -d ' ' -f 2-`
 	bw_pass1=''
 	bw_pass2=''
@@ -269,7 +271,8 @@ ssh_deploy(){
 
 add_config(){
 	ssh_deploy
-	arch-chroot /mnt su - $user -c "git clone $ARCH_ENV_URL /home/$user/.local/share/env"
+	arch-chroot /mnt su - $user -c "git clone $ARCH_ENV_URL_HTTPS /home/$user/.local/share/env"
+	arch-chroot /mnt su - $user -c "cd /home/$user/.local/share/env/env && git remote set-url origin $ARCH_ENV_URL_GIT"
 	arch-chroot /mnt su - $user -c "chmod +x /home/$user/.local/share/env/deploy && /home/$user/.local/share/env/deploy"
 }
 
