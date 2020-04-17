@@ -229,7 +229,6 @@ add_user(){
 # -------------- CONFIG ----------------#
 
 get_bw_password(){
-
 	bw_username=$(dialog --stdout --inputbox "Enter your bitwarden user" 0 0) || exit 1
 	message="Please enter your bitwarden password"
 	while [[ -z "$bw_pass1" ]]  || [[ -z "$bw_pass2" ]] || [[ "$bw_pass1" != "$bw_pass2" ]]; do
@@ -243,31 +242,35 @@ get_bw_password(){
 }
 
 get_bw_session(){
-	[[ -z $bw_pass1 ]] && get_bw_password
-	pacman -Sy --noconfirm bitwarden-cli
-	bw login $bw_username $bw_pass1
-	bw_session=`echo $bw_pass1 | bw unlock | grep '$ export' | cut -d ' ' -f 2-`
+	[[ -z "$bw_pass1" ]] && get_bw_password
+	pacman -Sy --noconfirm bitwarden-cli jq
+	bw logout
+	bw_session=$(bw login $bw_username $bw_pass1 --raw)
 	bw_pass1=''
 	bw_pass2=''
 }
 
 ssh_deploy_on_gitlab(){
-	ssh_public=(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
-	gitlab_private_token=(bw get password --session $bw_session gitlab_token)
-	curl  --data "{\"title\":\"$hostname\",\"key\":\"$ssh_public\"}" https://api.github.com/user/keys?private_token=$gitlab_private_token
+	ssh_public=$(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
+	gitlab_private_token=$(bw get password --session $bw_session gitlab_token)
+	gitlab_projects_ids=$(curl --header "PRIVATE-TOKEN: $gitlab_private_token" https://gitlab.com/api/v4/projects | jq '.[]|.id')
+	for gitlab_project_id in $gitlab_projects_ids; do
+		curl --request POST --header "PRIVATE-TOKEN: $gitlab_private_token" --header "Content-Type: application/json" \
+			--data "{\"title\": \"$hostname\", \"key\": \"$ssh_public\"}" https://gitlab.com/api/v4/projects/${gitlab_project_id}/deploy_keys
+	done
 }
 
 ssh_deploy_on_github(){
-	github_username=(bw get username --session $bw_session github.com)
-	github_password=(bw get password --session $bw_session github.com)
-	ssh_public=(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
+	github_username=$(bw get username --session $bw_session github.com)
+	github_password=$(bw get password --session $bw_session github_token)
+	ssh_public=$(cat /mnt/home/$user/.local/share/ssh/id_rsa.pub)
 	curl -u "$github_username:$github_password" --data "{\"title\":\"$hostname\",\"key\":\"$ssh_public\"}" https://api.github.com/user/keys
 }
 
 ssh_deploy(){
 	arch-chroot /mnt su - $user -c "mkdir -p /home/$user/.local/share/ssh"
 	arch-chroot /mnt su - $user -c "ssh-keygen -qN $password -f /home/$user/.local/share/ssh/id_rsa"
-	[[ -z $bw_session ]] && get_bw_session
+	[[ -z "$bw_session" ]] && get_bw_session
 	ssh_deploy_on_github
 	ssh_deploy_on_gitlab
 }
@@ -319,7 +322,7 @@ get_all_input(){
 	[[ -z "${user}" ]] && get_username
 	[[ -z "${password}" ]] && get_password
 	[[ -z "$hostname" ]] && get_hostname
-	[[ -z "$bw_session" ]] && get_bw_session
+	[[ -z "$bw_pass1" ]] && get_bw_password
 }
 
 manage_error_during_install && \
